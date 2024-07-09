@@ -1,0 +1,188 @@
+
+net {
+  name = unnamedBN;
+  software = "aGrUM 1.14.1";
+  node_size = (50 50);
+}
+
+node Symptom_ThroatPain {
+   states = (0 1 );
+   label = "Symptom_ThroatPain";
+   ID = "Symptom_ThroatPain";
+}
+
+node Symptom_Dyspnea {
+   states = (0 1 );
+   label = "Symptom_Dyspnea";
+   ID = "Symptom_Dyspnea";
+}
+
+node Symptom_Fever {
+   states = (0 1 );
+   label = "Symptom_Fever";
+   ID = "Symptom_Fever";
+}
+
+node Symptom_Cough {
+   states = (0 1 );
+   label = "Symptom_Cough";
+   ID = "Symptom_Cough";
+}
+
+node Symptom_Headache {
+   states = (0 1 );
+   label = "Symptom_Headache";
+   ID = "Symptom_Headache";
+}
+
+node Symptom_TasteDisorders {
+   states = (0 1 );
+   label = "Symptom_TasteDisorders";
+   ID = "Symptom_TasteDisorders";
+}
+
+node Symptom_OlfactoryDisorders {
+   states = (0 1 );
+   label = "Symptom_OlfactoryDisorders";
+   ID = "Symptom_OlfactoryDisorders";
+}
+
+node Symptom_Coryza {
+   states = (0 1 );
+   label = "Symptom_Coryza";
+   ID = "Symptom_Coryza";
+}
+
+node Gender {
+   states = (0 1 );
+   label = "Gender";
+   ID = "Gender";
+}
+
+node Class {
+   states = (0 1 );
+   label = "Class";
+   ID = "Class";
+}
+
+potential (Symptom_ThroatPain) {
+   data = (  0.271173 0.728827);
+}
+
+potential ( Symptom_Dyspnea | Symptom_ThroatPain   ) {
+   data = 
+   ((   0.266647   0.733353)   % Symptom_ThroatPain=0   
+   (   0.375466   0.624534));   % Symptom_ThroatPain=1   
+}
+
+potential ( Symptom_Fever | Symptom_ThroatPain   ) {
+   data = 
+   ((   0.541249   0.458751)   % Symptom_ThroatPain=0   
+   (   0.612695   0.387305));   % Symptom_ThroatPain=1   
+}
+
+potential ( Symptom_Cough | Symptom_Dyspnea   Symptom_Fever   ) {
+   data = 
+   (((   0.733738   0.266262)   % Symptom_Fever=0   Symptom_Dyspnea=0   
+   (   0.579553   0.420447))   % Symptom_Fever=1   Symptom_Dyspnea=0   
+   ((   0.576514   0.423486)   % Symptom_Fever=0   Symptom_Dyspnea=1   
+   (   0.61376   0.38624)));   % Symptom_Fever=1   Symptom_Dyspnea=1   
+}
+
+potential ( Symptom_Headache | Symptom_Cough   Symptom_Dyspnea   Symptom_ThroatPain   Symptom_Fever   ) {
+   data = 
+   (((((   0.296843   0.703157)   % Symptom_Fever=0   Symptom_ThroatPain=0   Symptom_Dyspnea=0   Symptom_Cough=0   
+   (   0.254824   0.745176))   % Symptom_Fever=1   Symptom_ThroatPain=0   Symptom_Dyspnea=0   Symptom_Cough=0   
+   ((   0.105453   0.894547)   % Symptom_Fever=0   Symptom_ThroatPain=1   Symptom_Dyspnea=0   Symptom_Cough=0   
+   (   0.213584   0.786416)))   % Symptom_Fever=1   Symptom_ThroatPain=1   Symptom_Dyspnea=0   Symptom_Cough=0   
+   (((   0.191052   0.808948)   % Symptom_Fever=0   Symptom_ThroatPain=0   Symptom_Dyspnea=1   Symptom_Cough=0   
+   (   0.202927   0.797073))   % Symptom_Fever=1   Symptom_ThroatPain=0   Symptom_Dyspnea=1   Symptom_Cough=0   
+   ((   0.144097   0.855903)   % Symptom_Fever=0   Symptom_ThroatPain=1   Symptom_Dyspnea=1   Symptom_Cough=0   
+   (   0.104922   0.895078))))   % Symptom_Fever=1   Symptom_ThroatPain=1   Symptom_Dyspnea=1   Symptom_Cough=0   
+   ((((   0.31844   0.68156)   % Symptom_Fever=0   Symptom_ThroatPain=0   Symptom_Dyspnea=0   Symptom_Cough=1   
+   (   0.0563258   0.943674))   % Symptom_Fever=1   Symptom_ThroatPain=0   Symptom_Dyspnea=0   Symptom_Cough=1   
+   ((   0.313953   0.686047)   % Symptom_Fever=0   Symptom_ThroatPain=1   Symptom_Dyspnea=0   Symptom_Cough=1   
+   (   0.173086   0.826914)))   % Symptom_Fever=1   Symptom_ThroatPain=1   Symptom_Dyspnea=0   Symptom_Cough=1   
+   (((   0.16017   0.83983)   % Symptom_Fever=0   Symptom_ThroatPain=0   Symptom_Dyspnea=1   Symptom_Cough=1   
+   (   0.148529   0.851471))   % Symptom_Fever=1   Symptom_ThroatPain=0   Symptom_Dyspnea=1   Symptom_Cough=1   
+   ((   0.109985   0.890015)   % Symptom_Fever=0   Symptom_ThroatPain=1   Symptom_Dyspnea=1   Symptom_Cough=1   
+   (   0.618744   0.381256)))));   % Symptom_Fever=1   Symptom_ThroatPain=1   Symptom_Dyspnea=1   Symptom_Cough=1   
+}
+
+potential ( Symptom_TasteDisorders | Symptom_Headache   Symptom_Fever   Symptom_ThroatPain   ) {
+   data = 
+   ((((   0.273014   0.726986)   % Symptom_ThroatPain=0   Symptom_Fever=0   Symptom_Headache=0   
+   (   0.214468   0.785532))   % Symptom_ThroatPain=1   Symptom_Fever=0   Symptom_Headache=0   
+   ((   0.191743   0.808257)   % Symptom_ThroatPain=0   Symptom_Fever=1   Symptom_Headache=0   
+   (   0.252481   0.747519)))   % Symptom_ThroatPain=1   Symptom_Fever=1   Symptom_Headache=0   
+   (((   0.111246   0.888754)   % Symptom_ThroatPain=0   Symptom_Fever=0   Symptom_Headache=1   
+   (   0.0550005   0.944999))   % Symptom_ThroatPain=1   Symptom_Fever=0   Symptom_Headache=1   
+   ((   0.0624757   0.937524)   % Symptom_ThroatPain=0   Symptom_Fever=1   Symptom_Headache=1   
+   (   0.186905   0.813095))));   % Symptom_ThroatPain=1   Symptom_Fever=1   Symptom_Headache=1   
+}
+
+potential ( Symptom_OlfactoryDisorders | Symptom_Headache   Symptom_TasteDisorders   ) {
+   data = 
+   (((   0.683486   0.316514)   % Symptom_TasteDisorders=0   Symptom_Headache=0   
+   (   0.19745   0.80255))   % Symptom_TasteDisorders=1   Symptom_Headache=0   
+   ((   0.840299   0.159701)   % Symptom_TasteDisorders=0   Symptom_Headache=1   
+   (   0.0570047   0.942995)));   % Symptom_TasteDisorders=1   Symptom_Headache=1   
+}
+
+potential ( Symptom_Coryza | Symptom_TasteDisorders   Symptom_Headache   ) {
+   data = 
+   (((   0.316514   0.683486)   % Symptom_Headache=0   Symptom_TasteDisorders=0   
+   (   0.10796   0.89204))   % Symptom_Headache=1   Symptom_TasteDisorders=0   
+   ((   0.158924   0.841076)   % Symptom_Headache=0   Symptom_TasteDisorders=1   
+   (   0.054831   0.945169)));   % Symptom_Headache=1   Symptom_TasteDisorders=1   
+}
+
+potential ( Gender | Symptom_Coryza   Symptom_OlfactoryDisorders   Symptom_Fever   ) {
+   data = 
+   ((((   0.631291   0.368709)   % Symptom_Fever=0   Symptom_OlfactoryDisorders=0   Symptom_Coryza=0   
+   (   0.688841   0.311159))   % Symptom_Fever=1   Symptom_OlfactoryDisorders=0   Symptom_Coryza=0   
+   ((   0.696721   0.303279)   % Symptom_Fever=0   Symptom_OlfactoryDisorders=1   Symptom_Coryza=0   
+   (   0.641757   0.358243)))   % Symptom_Fever=1   Symptom_OlfactoryDisorders=1   Symptom_Coryza=0   
+   (((   0.619198   0.380802)   % Symptom_Fever=0   Symptom_OlfactoryDisorders=0   Symptom_Coryza=1   
+   (   0.555014   0.444986))   % Symptom_Fever=1   Symptom_OlfactoryDisorders=0   Symptom_Coryza=1   
+   ((   0.342119   0.657881)   % Symptom_Fever=0   Symptom_OlfactoryDisorders=1   Symptom_Coryza=1   
+   (   0.581557   0.418443))));   % Symptom_Fever=1   Symptom_OlfactoryDisorders=1   Symptom_Coryza=1   
+}
+
+potential ( Class | Gender   Symptom_Fever   Symptom_OlfactoryDisorders   Symptom_Coryza   Symptom_Dyspnea   ) {
+   data = 
+   ((((((   0.887543   0.112457)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=0   
+   (   0.925434   0.0745665))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=0   
+   ((   0.833086   0.166914)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=0   
+   (   0.817098   0.182902)))   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=0   
+   (((   0.946634   0.0533662)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=0   
+   (   0.719863   0.280137))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=0   
+   ((   0.581381   0.418619)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=0   
+   (   0.0806361   0.919364))))   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=0   
+   ((((   0.664948   0.335052)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=0   
+   (   0.822936   0.177064))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=0   
+   ((   0.749721   0.250279)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=0   
+   (   0.666611   0.333389)))   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=0   
+   (((   0.832756   0.167244)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=0   
+   (   0.235537   0.764463))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=0   
+   ((   0.052104   0.947896)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=0   
+   (   0.106416   0.893584)))))   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=0   
+   (((((   0.997409   0.00259067)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=1   
+   (   0.99896   0.0010395))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=1   
+   ((   0.762942   0.237058)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=1   
+   (   0.644344   0.355656)))   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=1   
+   (((   0.444637   0.555363)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=1   
+   (   0.476226   0.523774))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=1   
+   ((   0.919446   0.0805535)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=1   
+   (   0.810153   0.189847))))   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=0   Gender=1   
+   ((((   0.664948   0.335052)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=1   
+   (   0.997409   0.00259067))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=1   
+   ((   0.81553   0.18447)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=1   
+   (   0.372949   0.627051)))   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=0   Symptom_Fever=1   Gender=1   
+   (((   0.699377   0.300623)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=1   
+   (   0.421182   0.578818))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=1   
+   ((   0.147372   0.852628)   % Symptom_Dyspnea=0   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=1   
+   (   0.180489   0.819511))))));   % Symptom_Dyspnea=1   Symptom_Coryza=1   Symptom_OlfactoryDisorders=1   Symptom_Fever=1   Gender=1   
+}
+
+

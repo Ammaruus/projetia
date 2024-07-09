@@ -59,10 +59,10 @@ node Gender {
    ID = "Gender";
 }
 
-node Class {
+node Positif {
    states = (0 1 );
-   label = "Class";
-   ID = "Class";
+   label = "Positif";
+   ID = "Positif";
 }
 
 potential (Symptom_ThroatPain) {
@@ -149,7 +149,7 @@ potential ( Gender | Symptom_Coryza   Symptom_OlfactoryDisorders   Symptom_Fever
    (   0.581557   0.418443))));   % Symptom_Fever=1   Symptom_OlfactoryDisorders=1   Symptom_Coryza=1   
 }
 
-potential ( Class | Gender   Symptom_Fever   Symptom_OlfactoryDisorders   Symptom_Coryza   Symptom_Dyspnea   ) {
+potential ( Positif | Gender   Symptom_Fever   Symptom_OlfactoryDisorders   Symptom_Coryza   Symptom_Dyspnea   ) {
    data = 
    ((((((   0.887543   0.112457)   % Symptom_Dyspnea=0   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=0   
    (   0.925434   0.0745665))   % Symptom_Dyspnea=1   Symptom_Coryza=0   Symptom_OlfactoryDisorders=0   Symptom_Fever=0   Gender=0   

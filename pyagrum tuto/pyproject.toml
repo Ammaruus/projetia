@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "pyagrum tuto"
+version = "0.1.0"
+description = ""
+authors = ["Ammaruus <aissouamr@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyagrum = "^1.14.1"
+jupyter = "^1.0.0"
+ipykernel = "^6.29.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

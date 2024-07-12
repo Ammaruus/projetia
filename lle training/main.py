@@ -1,5 +1,6 @@
 import lle
 from lle import LLE, World
+from lle import Action, WorldState
 import matplotlib
 
 # Changer le backend de Matplotlib
@@ -108,5 +109,31 @@ board =[
 ]
 save_board(board, "board")
 world = load_world("board")
+#display_world(world)
+
+
+# Playing with agents
+#linear.reset()
+#display_world(linear)
+#events = linear.step([Action.EAST])
+#display_world(linear)
+#print("Events:", events)
+
+#events = linear.step([Action.EAST])
+#display_world(linear)
+#print("Events:", events)
+#print("Available actions for agent 0:", linear.available_actions()[0])
+
+# getting information about the environment
+world.reset()
 display_world(world)
+print("Current state:", world.get_state())
+print("Number of gems:", world.n_gems)
+print("Number of collected gems:", world.gems_collected)
+print("Position of the walls:", world.wall_pos)
+print("Position of the voids:", world.void_pos)
+print("Position of the exits:", world.exit_pos)
+print("Position of the lasers:", world.lasers)
+print("Position of the agents:", world.agents_positions)
+
 

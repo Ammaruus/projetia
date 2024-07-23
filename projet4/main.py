@@ -2,7 +2,7 @@ from rl.env import Labyrinth
 from rl.qlearning import QLearning
 
 if __name__ == "__main__":
-    env = Labyrinth()
+    env = Labyrinth() 
     while True:
         env.reset()
         env.render()

@@ -54,3 +54,4 @@ S0 . . . . . .
 
         cv2.imshow("Labyrinth", img)
         cv2.waitKey(1)
+

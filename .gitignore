@@ -1,0 +1,5 @@
+# Ignorer tous les fichiers .pyc
+*.pyc
+
+# ignorer le fichier train.csv
+/projet5/train.csv

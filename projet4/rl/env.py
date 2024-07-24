@@ -1,6 +1,5 @@
 from itertools import product
 import random
-
 import lle
 
 
@@ -62,6 +61,7 @@ S0 . . . . . .
         cv2.waitKey(1)
 
     # Transition method
+
 
 
     

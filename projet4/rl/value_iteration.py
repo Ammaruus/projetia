@@ -92,7 +92,7 @@ class ValueIteration:
         for state in self.mdp.states():
             print(state, self.value(state))
 
-    def value_iteration(self, n: int):
+    def value_iteration(self, n: int): 
         """Performs value iteration for the given number of iterations."""
         for _ in range(n):
             new_values = copy.deepcopy(self.values)

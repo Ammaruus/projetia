@@ -37,7 +37,7 @@ class ENVMDP(MDP[WorldState, list[Action]]):
         for a in actions:
             r = self.world.step(a)
             if self.world.get_state() == new_state:
-                return r
+                return r 
             self.world.set_state(state)
         raise ValueError("The new state is not reachable from the given state")
 

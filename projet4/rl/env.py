@@ -1,5 +1,6 @@
 from itertools import product
 import random
+
 import lle
 
 
@@ -16,6 +17,7 @@ S0 . . . . . .
         self._done = False
         self._first_render = True
         all_positions = set(product(range(self._world.height), range(self._world.width)))
+        self._initial_position = None 
         self._start_positions = list(all_positions - set(self._world.wall_pos) - set(self._world.exit_pos))
 
     def reset(self):
@@ -23,6 +25,10 @@ S0 . . . . . .
         self._world.reset()
         initial_position = random.choice(self._start_positions)
         self._world.set_state(lle.WorldState([initial_position], []))
+
+    
+    def get_initial_position(self):
+        return self._initial_position
 
     def step(self, action: int) -> float:
         """Effectue une action sur l'environnement et retourne la récompense associée"""
@@ -55,3 +61,7 @@ S0 . . . . . .
         cv2.imshow("Labyrinth", img)
         cv2.waitKey(1)
 
+    # Transition method
+
+
+    

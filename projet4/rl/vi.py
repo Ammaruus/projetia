@@ -2,12 +2,14 @@ from env import Labyrinth
 from mdp import MDP
 from env_mdp import ENVMDP
 
+from typing import Tuple
 from typing import TypeVar, Generic
 from abc import abstractmethod, ABC
 import copy
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import lle
 
 A = TypeVar("A")
 S = TypeVar("S")
@@ -102,12 +104,21 @@ class ValueIteration:
                     new_values[state] = self._compute_value_from_qvalues(state)
             self.values = new_values
             #self.print_values_table(_)
+    
+    def get_next_state(self, state: Tuple[int, int], action: int) -> (Tuple[int, int], float):
+        """Returns the next state given a state and an action."""
+        labyrinth = Labyrinth()
+        labyrinth._world.set_state(lle.WorldState([state], []))
+        rewards = labyrinth.step(4)
+        print("aaa")
+        return labyrinth.get_observation()
 
     def train(self, env: Labyrinth, iterations: list[int]):
         """Entraîne l'agent pour les étapes d'entraînement spécifiées et affiche les heatmaps."""
         for n in iterations:
             self.value_iteration(n)
-            self.plot_heatmap(env, n)
+            print(env.get_observation())
+            #self.plot_heatmap(env, n)
 
     def get_values_grid(self) -> np.ndarray:
         """Returns a grid of state values for plotting."""
@@ -142,10 +153,14 @@ def test_value_iteration():
     
     # Test the value method
     initial_state = env._world.get_state()
+    #initial_position = env.get_initial_position()
+    #initial_state = lle.WorldState([initial_position], [])
+    print(f"Initial state: {initial_state}")
+
     print(f"Initial value for the initial state: {vi.value(initial_state)}")
     
     # Perform value iteration for specific numbers of iterations
-    iteration_steps = [10, 20, 30, 40]
+    iteration_steps = [1,2, 3, 4, 5]
     
     # Train the agent and plot heatmaps
     vi.train(env, iteration_steps)
@@ -157,7 +172,9 @@ def test_value_iteration():
     # Test the select_action method
     best_action = vi.select_action(initial_state)
     print(f"Best action for the initial state: {best_action}")
-    
+
+
+
 
 if __name__ == "__main__":
     test_value_iteration()

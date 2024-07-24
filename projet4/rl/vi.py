@@ -2,7 +2,8 @@ from env import Labyrinth
 from mdp import MDP
 from env_mdp import ENVMDP
 
-from typing import TypeVar
+from typing import TypeVar, Generic
+from abc import abstractmethod, ABC
 import copy
 import numpy as np
 import seaborn as sns
@@ -17,8 +18,6 @@ class ValueIteration:
         self.mdp = mdp
         # Initialize all state values
         self.values = {state: 0.0 for state in mdp.states()}
-        # Initialize visited positions tracker
-        self.visited_positions = []
 
     def value(self, state: S) -> float:
         """Returns the value of the given state."""
@@ -58,7 +57,7 @@ class ValueIteration:
         if value is None:
             return 0.0
         return value
-
+    
     def get_values_at_position(self, i: int, j: int) -> list[float]:
         """Returns the values of the states at the given position."""
         states_at_position = [
@@ -104,32 +103,32 @@ class ValueIteration:
             self.values = new_values
             #self.print_values_table(_)
 
-    def train(self, env: Labyrinth, n: int, iterations: int):
-        """Entraîne l'agent pour n itérations multiples fois."""
-        for _ in range(iterations):
-            env.reset()
+    def train(self, env: Labyrinth, iterations: list[int]):
+        """Entraîne l'agent pour les étapes d'entraînement spécifiées et affiche les heatmaps."""
+        for n in iterations:
             self.value_iteration(n)
-            for state in self.mdp.states():
-                self.visited_positions.append(state.agents_positions[0])
-        self.plot_heatmap(env)
+            self.plot_heatmap(env, n)
 
-    def plot_heatmap(self, env: Labyrinth):
-        # Create a matrix for visited positions
-        height, width = env._world.height, env._world.width
-        heatmap = np.zeros((height, width))
+    def get_values_grid(self) -> np.ndarray:
+        """Returns a grid of state values for plotting."""
+        height, width = self.mdp.world.height, self.mdp.world.width
+        values_grid = np.zeros((height, width))
+        for state in self.mdp.states():
+            i, j = state.agents_positions[0]
+            values_grid[i, j] = self.value(state)
+        return values_grid
 
-        for pos in self.visited_positions:
-            heatmap[pos[0], pos[1]] += 1
+    def plot_heatmap(self, env: Labyrinth, iteration: int):
+        """Plot the heatmap of state values."""
+        values_grid = self.get_values_grid()
 
-        # Use seaborn to create the heatmap
         plt.figure(figsize=(10, 8))
-        sns.heatmap(heatmap, annot=True, cmap="YlGnBu", cbar=True)
-        plt.title("Heatmap des positions visitées dans le labyrinthe")
+        sns.heatmap(values_grid, annot=True, cmap="YlGnBu", cbar=True)
+        plt.title(f"Heatmap des valeurs des états après {iteration} étapes d'entraînement")
         plt.xlabel("X")
         plt.ylabel("Y")
         plt.gca().invert_yaxis()  # Inverser l'axe Y pour correspondre à la représentation graphique
         plt.show()
-
 def test_value_iteration():
     # Initialize the environment
     env = Labyrinth()
@@ -143,17 +142,17 @@ def test_value_iteration():
     
     # Test the value method
     initial_state = env._world.get_state()
-    #print(f"Initial value for the initial state: {vi.value(initial_state)}")
+    print(f"Initial value for the initial state: {vi.value(initial_state)}")
     
-    # Perform value iteration for a number of iterations
-    n_iterations = 10
+    # Perform value iteration for specific numbers of iterations
+    iteration_steps = [10, 20, 30, 40]
     
-    # Train the agent 10 times
-    vi.train(env, n_iterations, 10)
+    # Train the agent and plot heatmaps
+    vi.train(env, iteration_steps)
     
     # Test the updated value method
     updated_value = vi.value(initial_state)
-    #print(f"Updated value for the initial state after {n_iterations * training_iterations} iterations: {updated_value}")
+    print(f"Updated value for the initial state after {iteration_steps[-1]} iterations: {updated_value}")
     
     # Test the select_action method
     best_action = vi.select_action(initial_state)

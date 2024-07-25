@@ -1,4 +1,4 @@
-from env import Labyrinth
+from test import Labyrinth
 from mdp import MDP
 from env_mdp import ENVMDP
 
@@ -120,7 +120,7 @@ class ValueIteration:
         """Entraîne l'agent pour les étapes d'entraînement spécifiées et affiche les heatmaps."""
         for n in iterations:
             self.value_iteration(n)
-            self.plot_heatmap(env, n)
+            #self.plot_heatmap(env, n)
 
     def get_values_grid(self) -> np.ndarray:
         """Returns a grid of state values for plotting."""

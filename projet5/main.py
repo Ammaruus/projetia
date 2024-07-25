@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# charger le fichier csv
 def load_mnist_data(file_path):
     data = np.loadtxt(file_path, delimiter=',', skiprows=1)
     

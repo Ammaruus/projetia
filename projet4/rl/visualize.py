@@ -5,7 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from test import Labyrinth
 
-
+ 
 class LabyrinthGame:
     def __init__(self):
         self.env = Labyrinth()
@@ -21,7 +21,8 @@ class LabyrinthGame:
                 print("Le jeu est terminé.")
                 break
             print("actions possible de l'agent :",self.env._world.available_actions())
-            self.env.step(action)
+            #self.env.step(action)
+            print("la recompense est :",self.env.step(action))
             self.env.render()
             self.env.render()
             self.visited_positions.append(self.env.get_observation())
@@ -30,6 +31,6 @@ class LabyrinthGame:
 
 
 # Actions: 0 - Nord, 1 - Est, 2 - Sud, 3 - Ouest
-actions = [1 , 0, 3, 2, 0, 1, 2, 3, 0, 1, 2, 3]  # Exemple d'actions
+actions = [2]  # Exemple d'actions
 game = LabyrinthGame()
 game.play(actions)

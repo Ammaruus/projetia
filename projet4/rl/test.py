@@ -20,7 +20,8 @@ S0 . . . . . .
         self._done = False
         self._first_render = True
         all_positions = set(product(range(self._world.height), range(self._world.width)))
-        self._start_positions = list(all_positions - set(self._world.wall_pos) - set(self._world.exit_pos))
+        #self._start_positions = list(all_positions - set(self._world.wall_pos) - set(self._world.exit_pos))
+        self._start_positions = [(6,5)]
 
     def reset(self):
         self._done = False
@@ -37,11 +38,12 @@ S0 . . . . . .
             reward = result
         else:
             events, reward = result, -1.0  # Assumant une valeur par défaut si nécessaire
-
+ 
         for event in events:
             if event.event_type == lle.EventType.AGENT_EXIT:
                 self._done = True
                 return 0.0
+            
         return reward
 
     def get_observation(self) -> tuple[int, int]:
@@ -62,6 +64,5 @@ S0 . . . . . .
 
         cv2.imshow("Labyrinth", img)
         cv2.waitKey(1)
-
 
 

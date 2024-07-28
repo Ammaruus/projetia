@@ -2,21 +2,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # charger le fichier csv
-def load_mnist_data(file_path):
+def load_mnist_data(file_path) -> tuple: # tuple contenant l'image et le one-hot
+
+    print("file_path : ", file_path)
     data = np.loadtxt(file_path, delimiter=',', skiprows=1)
     
     #... 
-    labels = None
+    #labels = None
+    labels = data[:, 0].astype(int)
     num_classes = 10
     labels_one_hot = np.eye(num_classes)[labels] # Qu'est-ce qu'un encodage one-hot ?
     
-    images = None
-    images = images / 255.0
+    #images = None
+    #images = images / 255.0
+    images = data[:, 1:] / 255.0
+
+    print("images : ", images)
+    print("labels one hot : ", labels_one_hot)
 
     return images, labels_one_hot
 
+# reseau de neuronnes 
 class NeuralNetwork:
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self,
+                 input_size: int = 784,
+                 hidden_size : int = 784,
+                 output_size : int = 10):
         self.weights_input_hidden = np.random.randn(input_size, hidden_size)
         self.weights_hidden_output = np.random.randn(hidden_size, output_size)
 

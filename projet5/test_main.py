@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from main_completed import NeuralNetwork 
+#from main_completed import NeuralNetwork # before
+from main import NeuralNetwork # after
 
 @pytest.fixture
 def neural_network():

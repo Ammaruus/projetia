@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# charger le fichier csv
 def load_mnist_data(file_path) -> tuple: # tuple contenant l'image et le one-hot
 
     print("file_path : ", file_path)
@@ -22,69 +21,55 @@ def load_mnist_data(file_path) -> tuple: # tuple contenant l'image et le one-hot
 
     return images, labels_one_hot
 
-# reseau de neuronnes 
 class NeuralNetwork:
-    def __init__(
-        self,
-        input_size: int = 784,
-        hidden_size : int = 784,
-        output_size : int = 10):
+    def __init__(self, input_size: int = 784, hidden_size: int = 784, output_size: int = 10):
         self.input_size = input_size
+        self.hidden_size = hidden_size
         self.output_size = output_size
         self.weights_input_hidden = np.random.randn(input_size, hidden_size)
         self.weights_hidden_output = np.random.randn(hidden_size, output_size)
 
-    def tanh(self, x: np.ndarray) -> np.ndarray:
-        #tanh function
+    def tanh(self, x):
         return np.tanh(x)
 
-    def softmax(self, x : np.ndarray) -> np.ndarray:
-        #softmax function
-        # pour éviter de grands exponentiels et des débordements possibles :
-        # Décaler chaque ligne de x en soustrayant sa valeur maximale.
-        x_shifted =  x - np.max(x, axis=1, keepdims=True)
-        
-        # claculer le softmax
+    def softmax(self, x: np.ndarray, epsilon=1e-12) -> np.ndarray:
+        # to avoid large exponentials and possible overflows:
+        # Shift each row of x by subtracting its max value.
+        x_shifted = x - np.max(x, axis=1, keepdims=True)
+        # Calculate the softmax with the shifted values.
         exp_x_shifted = np.exp(x_shifted)
         sum_exp_x_shifted = np.sum(exp_x_shifted, axis=1, keepdims=True)
-        
+
         # Calculate softmax and prevent division by zero.
         softmax_output = np.divide(
             exp_x_shifted, np.maximum(sum_exp_x_shifted, epsilon)
         )
         return softmax_output
+        # exps = np.exp(x - np.max(x, axis=1, keepdims=True))  # Stabilité numérique
+        # return exps / np.sum(exps, axis=1, keepdims=True)
 
-    def mse_loss(self, y_true, y_pred):
-        # ...
-        return None
+    def mse_loss(self, y_true : np.ndarray, y_pred : np.ndarray) -> float:
+        #return np.mean((y_true - y_pred) ** 2)
+        return np.divide(np.sum((np.subtract(y_true, y_pred) ** 2)), y_true.shape[0])
 
-    def forward(self, X):
-        # ...
+    def forward(self, X) -> np.ndarray:
+        self.hidden_input = np.dot(X, self.weights_input_hidden)
+        self.hidden_output = self.tanh(self.hidden_input)
+        self.output_input = np.dot(self.hidden_output, self.weights_hidden_output)
+        self.model_output = self.softmax(self.output_input)
+
+    def backward(self, X, y_one_hot, learning_rate=0.01) -> float:
+        loss = self.mse_loss(y_one_hot, self.model_output)
         
-        self.hidden_input = None
-        self.hidden_output = None
+        output_error = self.model_output - y_one_hot
+        hidden_error = np.dot(output_error, self.weights_hidden_output.T) * (1 - self.hidden_output ** 2)
 
-        self.output_input = None
-        self.model_output = None
-
-    def backward(self, X, y_one_hot, learning_rate=0.01):
-        # Calcul de la MSE
-        # ...
-        loss = None
-
-        # Rétropropagation
-        # ...
-        output_error = None
-        hidden_error = None
-
-        # Mise à jour des poids
-        # ...
-        self.weights_hidden_output = None
-        self.weights_input_hidden = None
+        self.weights_hidden_output -= learning_rate * np.dot(self.hidden_output.T, output_error)
+        self.weights_input_hidden -= learning_rate * np.dot(X.T, hidden_error)
 
         return loss
 
-    def train(self, X, y_one_hot, epochs=100, learning_rate=0.01):
+    def train(self, X, y_one_hot, epochs=10, learning_rate=0.03):
         for epoch in range(epochs):
             self.forward(X)
             loss = self.backward(X, y_one_hot, learning_rate)
@@ -129,16 +114,18 @@ class NeuralNetwork:
 
         plt.show()
 
-if __name__=="__main__":
+if __name__ == "__main__":
     X, y = load_mnist_data('train.csv')
-
     
-
+    # Vérification des données chargées
+    if X is None or y is None:
+        raise ValueError("Les données n'ont pas été correctement chargées.")
+    
     input_size = X.shape[1]
-    hidden_size = None # ...
+    hidden_size = 64  # Par exemple, vous pouvez ajuster cette valeur
     output_size = 10
-    e = None # ...
-    mu = None # ...
+    e = 30  # Nombre d'époques d'entraînement
+    mu = 0.01  # Taux d'apprentissage
 
     nn = NeuralNetwork(input_size, hidden_size, output_size)
     nn.train(X, y, epochs=e, learning_rate=mu)

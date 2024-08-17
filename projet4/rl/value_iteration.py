@@ -120,8 +120,8 @@ class ValueIteration:
         """Entraîne l'agent pour les étapes d'entraînement spécifiées et affiche les heatmaps."""
         for n in iterations:
             self.value_iteration(n)
-            #self.plot_heatmap(env, n)
-
+            self.plot_heatmap(env, n)
+    
     def get_values_grid(self) -> np.ndarray:
         """Returns a grid of state values for plotting."""
         height, width = self.mdp.world.height, self.mdp.world.width
@@ -131,6 +131,7 @@ class ValueIteration:
             values_grid[i, j] = self.value(state)
         return values_grid
 
+    # afficher la map de l'entrainement
     def plot_heatmap(self, env: Labyrinth, iteration: int):
         """Plot the heatmap of state values."""
         values_grid = self.get_values_grid()
@@ -158,7 +159,6 @@ def test_value_iteration():
     #initial_position = env.get_initial_position()
     #initial_state = lle.WorldState([initial_position], [])
     print(f"Initial state: {initial_state}")
-
     print(f"Initial value for the initial state: {vi.value(initial_state)}")
     
     # Perform value iteration for specific numbers of iterations

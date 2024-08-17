@@ -1,122 +1,765 @@
+import csv
+from datetime import date
+import time
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
 
 def load_mnist_data(file_path) -> tuple: # tuple contenant l'image et le one-hot
-
     print("file_path : ", file_path)
     data = np.loadtxt(file_path, delimiter=',', skiprows=1)
-    
-    #... 
-    #labels = None
+
     labels = data[:, 0].astype(int)
     num_classes = 10
     labels_one_hot = np.eye(num_classes)[labels] # Qu'est-ce qu'un encodage one-hot ?
-    
-    #images = None
-    #images = images / 255.0
     images = data[:, 1:] / 255.0
-
-    #print("images : ", images)
-    #print("labels one hot : ", labels_one_hot)
-
     return images, labels_one_hot
 
 class NeuralNetwork:
-    def __init__(self, input_size: int = 784, hidden_size: int = 784, output_size: int = 10):
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.output_size = output_size
-        self.weights_input_hidden = np.random.randn(input_size, hidden_size)
-        self.weights_hidden_output = np.random.randn(hidden_size, output_size)
 
-    def tanh(self, x):
+    def __init__(
+        self,
+        input_size: int, 
+        hidden_size: int,  
+        output_size: int,  
+        hidden_activation_function: str = "tanh",  # activation function
+        output_activation_function: str = "softmax",  # activation function
+        weights_file_path=None,  # path to the weights file
+    ):
+        """initializes the weights
+        of the neural network
+        with a normal distribution
+        """
+        self.input_size = input_size
+        self.output_size = output_size
+        self.hidden_activation_function = hidden_activation_function
+        self.output_activation_function = output_activation_function
+        self.weights_file_path = weights_file_path
+        self.reset(hidden_size, weights_file_path)
+
+    def reset(
+        self,
+        hidden_size=None,
+        weights_file_path=None,
+    ):
+        self.loss = float("inf")
+        self.fit = 0.0
+        self.loss_history = []
+        self.fit_history = []
+        self.accuracy_history = []
+        self.accuracy = 0.0
+        self.epochs = 0
+        self.learning_rate = 0.0
+        self.loss_factor_exponent = 0.0
+        if weights_file_path:
+            self.load_weights(weights_file_path)
+            self.hidden_size = self.weights_input_hidden.shape[1]
+        else:
+            if hidden_size:
+                self.hidden_size = hidden_size
+            # input hidden is the output of the input layer
+            self.weights_input_hidden = np.random.randn(
+                self.input_size, self.hidden_size
+            )
+            # hidden output is the output of the hidden layer
+            self.weights_hidden_output = np.random.randn(
+                self.hidden_size, self.output_size
+            )
+    def set_loss_factor_exponent(self):
+        """
+        Calculates the loss factor exponent.
+        """
+        batch_rate_log = np.log10(self.batch_rate)
+        hidden_size_log = np.log10(self.hidden_size)
+        self.loss_factor_exponent = (abs(batch_rate_log) + 1) / (hidden_size_log) + 1
+
+    # def get_details(
+    #     self,
+    #     mode="plot",
+    #     include_hidden_size=True,
+    #     include_hidden_activation=True,
+    #     include_output_activation=True,
+    #     include_batch_rate=True,
+    #     include_learning_rate=True,
+    #     include_epochs=True,
+    #     include_loss=True,
+    #     include_fit=True,
+    #     ):
+    #     """
+    #     Returns a string containing details about the network.
+    #     Parameters:
+    #     mode (str): 'plot' for plot annotation, 'filename' for file naming.
+    #     include_* (bool): Flags to control the inclusion of each attribute.
+    #     """
+    #     newline_char = "\n" if mode == "plot" else "_"
+    #     colon_char = ":" if mode == "plot" else "_"
+
+    #     # Dictionary of all attributes and whether they should be included
+    #     attributes = {
+    #         "hidden": (self.hidden_size, include_hidden_size),
+    #         "Activations_hidden": (self.hidden_activation_function, include_hidden_activation),
+    #         "output": (self.output_activation_function, include_output_activation),
+    #         "Batch_rate": (self.batch_rate, include_batch_rate),
+    #         "Learning_rate": (self.learning_rate, include_learning_rate),
+    #         "Epochs": (self.epochs, include_epochs),
+    #         "Loss": (self.loss, include_loss),
+    #         "Fit": (self.fit, include_fit),
+    #     }
+
+    #     # Build the details string based on included attributes
+    #     details_list = [
+    #         f"{newline_char}{key}{colon_char}{value}" for key, (value, include) in attributes.items() if include and value is not None
+    #     ]
+    #     details = "".join(details_list)
+    #     return details
+
+    def print_weights(self, weights):
+        for i in range(weights.shape[0]):
+            for j in range(weights.shape[1]):
+                print(weights[i][j])
+
+    def save_weights(self, file_path):
+        """
+        Saves the current weights of the neural network to a file.
+        """
+        np.savez(
+            file_path,
+            weights_input_hidden=self.weights_input_hidden,
+            weights_hidden_output=self.weights_hidden_output,
+        )
+        print(f"Weights saved to {file_path}")
+
+    def load_weights(self, file_path):
+        """
+        Loads weights from a file and initializes the neural network with them.
+        """
+        data = np.load(file_path)
+        self.weights_input_hidden = data["weights_input_hidden"]
+        self.weights_hidden_output = data["weights_hidden_output"]
+        print(f"Weights loaded from {file_path}")
+
+    def tanh(
+        self, x: np.ndarray  # input data
+    ) -> np.ndarray:  # Output after applying the tanh function.
+        """
+        tanh activation function
+        """
         return np.tanh(x)
 
-    def softmax(self, x):
-        exps = np.exp(x - np.max(x, axis=1, keepdims=True))  # Stabilité numérique
-        return exps / np.sum(exps, axis=1, keepdims=True)
+    def softmax(self, x: np.ndarray, epsilon=1e-12) -> np.ndarray:
+        """
+        Softmax activation function.
+        """
+        # to avoid large exponentials and possible overflows:
+        # Shift each row of x by subtracting its max value.
 
-    def mse_loss(self, y_true, y_pred):
-        return np.mean((y_true - y_pred) ** 2)
+        x_shifted = x - np.max(x, axis=1, keepdims=True)
 
-    def forward(self, X):
+        # Calculate the softmax with the shifted values.
+        exp_x_shifted = np.exp(x_shifted)
+        sum_exp_x_shifted = np.sum(exp_x_shifted, axis=1, keepdims=True)
+
+        # Calculate softmax and prevent division by zero.
+        softmax_output = np.divide(
+            exp_x_shifted, np.maximum(sum_exp_x_shifted, epsilon)
+        )
+        return softmax_output
+
+    def mse_loss(
+        self, y_true: np.ndarray, y_pred: np.ndarray  # true labels  # predicted labels
+    ) -> float:
+        """
+        Calculates the Mean Squared Error loss.
+        prediction error between the probability vector ytrue and the predicted vector y_pred
+
+        Returns:
+        float: Computed MSE loss.
+        """
+        # return (np.subtract(y_true,y_pred) ** 2).mean()
+        return np.divide(np.sum((np.subtract(y_true, y_pred) ** 2)), y_true.shape[0])
+
+    def get_output_error(
+        self,
+        y_true: np.ndarray,  # true labels
+        y_pred: np.ndarray,  # predicted labels
+    ) -> np.ndarray:
+        """
+        Calculates the output error.
+        Returns:
+        ndarray: Output error.
+        """
+        # Output layer error is the difference between predicted and true values
+        # y_one_hot.shape[0] is the number of rows in y_one_hot
+        # output_error = np.substract(y_one_hot, self.model_output) / y_one_hot.shape[0]
+        output_error = np.divide(np.subtract(y_true, y_pred), y_true.shape[0])
+        return output_error
+
+    def forward(self, X: np.ndarray) -> np.ndarray:  # input data
+        """
+        Performs the forward pass
+        of the neural network.
+        """
+        # Input to Hidden Layer
+        # Weighted sum of inputs
         self.hidden_input = np.dot(X, self.weights_input_hidden)
+        # Apply input-hidden activation function
         self.hidden_output = self.tanh(self.hidden_input)
+        # Hidden to Output Layer
         self.output_input = np.dot(self.hidden_output, self.weights_hidden_output)
+        # Apply hidden-output activation function
         self.model_output = self.softmax(self.output_input)
+        return self.model_output
 
-    def backward(self, X, y_one_hot, learning_rate=0.01):
-        loss = self.mse_loss(y_one_hot, self.model_output)
-        
-        output_error = self.model_output - y_one_hot
-        hidden_error = np.dot(output_error, self.weights_hidden_output.T) * (1 - self.hidden_output ** 2)
+    def backward(
+        self,
+        X: np.ndarray,  # input data
+        y_one_hot: np.ndarray,  # one-hot encoded labels
+        learning_rate=0.01,
+    ) -> float:
+        """
+        Performs the backward pass
+        (backpropagation) and
+        updates the weights.
+        Returns:
+        float: Computed loss.
+        """
+        # Calculate the Mean Squared Error loss
+        self.loss = self.mse_loss(y_one_hot, self.model_output)
+        # Rétropropagation
+        output_error = self.get_output_error(y_one_hot, self.model_output)
+        # Calculate hidden layer error (backpropagated error)
+        # hidden_output_ =  1 - self.hidden_output**2
+        # L’erreur de la couche intermédiaire est donnée par 𝑒ℎ = (𝑒_𝑜 × 𝑊_𝑜^𝑇 ) ∗ 𝑦ℎ ∗ (1 − 𝑦ℎ)
+        weights_hidden_output_transpose = np.transpose(self.weights_hidden_output)
 
-        self.weights_hidden_output -= learning_rate * np.dot(self.hidden_output.T, output_error)
-        self.weights_input_hidden -= learning_rate * np.dot(X.T, hidden_error)
+        hidden_error = (
+            np.dot(output_error, weights_hidden_output_transpose)
+            * self.hidden_output
+            * (1 - self.hidden_output)
+        )
+        # gradient is the derivative of the loss function (MSE) and serves to update the weights
 
-        return loss
+        # Calculating gradient for weights between input and hidden layer
+        x_transpose = np.transpose(X)
+        d_weights_input_hidden = np.dot(x_transpose, hidden_error)
+        # Calculate gradient for weights between hidden and output layer
+        d_weights_hidden_output = np.dot(self.hidden_output.T, output_error)
+        # Update the weights with the derivatives (gradient descent)
+        # 𝑊ℎ = 𝑊ℎ − 𝜇(𝑥𝑇 × 𝑒ℎ)
+        self.weights_input_hidden -= learning_rate * d_weights_input_hidden
+        # 𝑊𝑜 = 𝑊𝑜 − 𝜇(𝑦𝑜 × 𝑒𝑜)
+        self.weights_hidden_output -= learning_rate * d_weights_hidden_output
+        self.fit = (
+            np.sum(np.argmax(y_one_hot, axis=1) == np.argmax(self.model_output, axis=1))
+            / y_one_hot.shape[0]
+        )
+        return self.loss
 
-    def train(self, X, y_one_hot, epochs=100, learning_rate=0.01):
+    def exponential_decay_lr(self, initial_lr, epoch, total_epochs, decay_rate=0.1):
+        """
+        Calculates the exponentially decaying learning rate.
+        Returns:
+        float: Adjusted learning rate.
+        """
+        return initial_lr * np.exp(-decay_rate * epoch / total_epochs)
+
+    def adapt_learning_rate(
+        self,
+    ):
+        learning_rate = self.learning_rate
+        if self.loss == float("inf"):
+            loss_factor = 1.0
+        else:
+            # ensure loss is under 1
+            loss_below_0 = self.loss / 10
+            loss_factor = loss_below_0 ** (self.loss_factor_exponent)
+        learning_rate = learning_rate * loss_factor
+        return learning_rate
+
+    def train(
+        self,
+        X: np.ndarray,  # input data
+        y_one_hot: np.ndarray,  # one-hot encoded labels
+        x_test: np.ndarray = None,
+        y_test: np.ndarray = None,
+        epochs=100,  # number of training epochs
+        learning_rate=0.01,  # learning rate
+        batch_rate=0.1,  # batch size
+        show_training_progress=False,  # whether to show the training progress
+        weights_save_path=None,  # path to save the weights
+        keep_best_weights=True,
+    ):
+        """
+        Trains the neural network.
+        """
+        self.epochs = epochs
+        self.learning_rate = learning_rate
+        self.batch_rate = batch_rate
+        #self.set_loss_factor_exponent()
+        best_fit = 0.0
+        best_loss = float("inf")
+        if keep_best_weights:
+            best_weights_input_hidden = None
+            best_weights_hidden_output = None
+
         for epoch in range(epochs):
-            self.forward(X)
-            loss = self.backward(X, y_one_hot, learning_rate)
+            learning_rate = self.adapt_learning_rate()
+            # Shuffle the dataset
+            permutation = np.random.permutation(X.shape[0])
+            x_shuffled = X[permutation]
+            y_shuffled = y_one_hot[permutation]
+            loss = 0.0
+            batch_size = int(batch_rate * X.shape[0])
+            best_batch_loss = float("inf")
+            for i in range(0, X.shape[0], batch_size):
+                x_batch = x_shuffled[i : i + batch_size]
+                y_batch = y_shuffled[i : i + batch_size]
+
+                # Forward and backward pass for the batch
+                self.forward(x_batch)
+                batch_loss = self.backward(x_batch, y_batch, learning_rate)
+                # print(f"batch_loss {ii}: {batch_loss}")
+                if batch_loss < best_batch_loss:
+                    best_batch_loss = batch_loss
+
+                loss += batch_loss / len(range(0, X.shape[0], batch_size))
+            self.loss_history.append(loss)
+            self.fit_history.append(self.fit)
+            if x_test is not None and y_test is not None:
+                predictions = self.predict(x_test)
+                self.accuracy = self.calculate_accuracy(predictions, y_test)
+                self.accuracy_history.append(self.accuracy)
             if epoch % 10 == 0:
-                print(f'Epoch {epoch}, Loss: {loss}')
+                print(f"Epoch {epoch}, Loss: {loss}")
+            if best_fit < self.fit:
+                best_fit = self.fit
+            if loss < best_loss:
+                best_loss = loss
+                if keep_best_weights:
+                    best_weights_input_hidden = self.weights_input_hidden.copy()
+                    best_weights_hidden_output = self.weights_hidden_output.copy()
+            if loss < 0.00000001:
+                if not weights_save_path:
+                    weights_save_path = "src/weights_"
+                break
+        if keep_best_weights:
+            # Restore the best state of the network
+            self.weights_input_hidden = best_weights_input_hidden
+            self.weights_hidden_output = best_weights_hidden_output
+            self.loss = best_loss
+            self.fit = best_fit
+        if weights_save_path:
+            weights_save_path = (
+                weights_save_path
+                + f"_fit_max_{self.fit:.2f}"
+                + "_"
+                #+ self.get_details(mode="filename")
+                + str(date.today())
+                + "_"
+                + str(time.strftime("%H%M%S"))
+            )
+            self.save_weights(weights_save_path)
+        if show_training_progress:
+            self.plot_training_progress()
 
-    def predict(self, X):
+    def plot_training_progress(self):
+        plt.figure(figsize=(8, 6))
+
+        # Plotting both loss and fit on the same subplot
+        loss_line, = plt.plot(self.loss_history, label="Loss", color="red")
+
+        plt.title("Training Progress")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss", color="red")
+        # plt.legend(loc="upper left")  # Comment out this line
+
+        # Secondary y-axis for Fit and Accuracy (if scales are very different)
+        ax2 = plt.gca().twinx()
+        fit_line, = ax2.plot(self.fit_history, label="Fit", color="blue")
+        accuracy_line, = ax2.plot(self.accuracy_history, label="Accuracy", color="green")
+        ax2.set_ylabel("Fit and Accuracy", color="darkcyan")
+        ax2.tick_params(axis="y", labelcolor="black")
+
+        # Combine legends from both axes
+        lines = [loss_line, fit_line, accuracy_line]
+        labels = [line.get_label() for line in lines]
+        plt.legend(lines, labels, loc="upper left")
+
+        # Global title with network properties
+        global_title = "Neural Network Training Progress"
+        plt.suptitle(global_title)
+
+        # Annotation with network properties
+
+        plt.annotate(
+            #self.get_details(),
+            "details",
+            xy=(0.5, -0.15),
+            xycoords="axes fraction",
+            ha="left",
+            va="top",
+            fontsize=10,
+            color="gray",
+        )
+
+        # Save the plot
+        file_path = (
+            ""
+            # +"doc/out/progress/" 
+            #+ self.get_details(mode="filename") 
+            +"+1"
+            + ".png"
+        )
+        plt.savefig(
+            file_path,
+            #bbox_inches="tight",  # prevents the labels from being cut off
+        )
+
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.show(block=False)
+
+        plt.pause(0.1)
+
+    def predict(self, X: np.ndarray):  # input data
+        """
+        Predicts labels for given data.
+
+        Returns:
+        ndarray: Predicted labels.
+        """
         self.forward(X)
+        # return max value of each row
         return np.argmax(self.model_output, axis=1)
-    
-    def visualize_prediction(self, X, y_true, index):
-        input_data = X[index, :].reshape(28, 28)
 
-        predicted_label = self.predict(X[index:index + 1])[0]
+    def calculate_accuracy(self, X: np.ndarray, y_true: np.ndarray) -> float:
+        """
+        Calculates the accuracy of the neural network on a given dataset.
 
-        plt.imshow(input_data, cmap='gray')
-        plt.title(f"Prediction: {predicted_label}, True Label: {np.argmax(y_true[index])}")
-        plt.show()
-        
-    def confusion_matrix(self, X, y_true):
+        Parameters:
+        X (np.ndarray): The input data.
+        y_true (np.ndarray): The true labels, expected to be one-hot encoded.
+
+        Returns:
+        float: The accuracy of the model.
+        """
+        predictions = self.predict(X)
+        correct_predictions = np.sum(predictions == np.argmax(y_true, axis=1))
+        accuracy = correct_predictions / X.shape[0]
+        return accuracy
+
+    def calculate_accuracy(self, predictions: np.ndarray, y_true: np.ndarray) -> float:
+        """
+        Calculates the accuracy of the neural network on a given dataset.
+
+        Parameters:
+        X (np.ndarray): The input data.
+        y_true (np.ndarray): The true labels, expected to be one-hot encoded.
+
+        Returns:
+        float: The accuracy of the model.
+        """
+        correct_predictions = np.sum(predictions == np.argmax(y_true, axis=1))
+        accuracy = correct_predictions / predictions.shape[0]
+        return accuracy
+
+    def visualize_prediction(
+        self,
+        X: np.ndarray,  # input data
+        y_true: np.ndarray,  # one-hot encoded labels
+        index: int,  # index of the data point to visualize
+    ):
+        """
+        Visualizes the prediction for a single data point.
+        """
+        input_data = X[index, :].reshape(28, 28)  # 28x28 image
+
+        predicted_label = self.predict(X[index : index + 1])[0]
+
+        plt.imshow(input_data, cmap="gray")
+        plt.title(
+            f"Prediction: {predicted_label}, True Label: {np.argmax(y_true[index])}"
+        )
+        plt.show(block=False)
+        plt.pause(0.1)
+
+    def visualize_predictions(self, X, y_true, num_predictions=10):
+        """
+        Visualizes the predictions for the first
+        num_predictions data points
+        into one plot.
+
+        Parameters:
+        X (ndarray): Data for prediction.
+        y_true (ndarray): True labels.
+        num_predictions (int): Number of predictions to visualize.
+        """
+        predictions = self.predict(X[:num_predictions])
+        images = X[:num_predictions, :].reshape(num_predictions, 28, 28)
+        true_labels = np.argmax(y_true[:num_predictions], axis=1)
+
+        plt.figure(figsize=(12, 12))
+
+        for i in range(num_predictions):
+            plt.subplot(5, 2, i + 1)
+            plt.imshow(images[i], cmap="gray")
+            plt.title(f"Prediction: {predictions[i]}, True Label: {true_labels[i]}")
+            plt.axis("off")
+
+        plt.tight_layout()
+        plt.show(block=False)
+        plt.pause(0.1)
+
+    def confusion_matrix(
+        self,
+        X: np.ndarray,  # input data
+        y_true: np.ndarray,  # one-hot encoded true labels
+    ):
+        # Predict the labels for the given input data using the model
         y_pred = self.predict(X)
 
+        # Number of classes in the dataset, here assumed to be 10
         num_classes = 10
+
+        # Initialize a confusion matrix with zeros, of size num_classes x num_classes
         cm = np.zeros((num_classes, num_classes), dtype=int)
 
+        # Populate the confusion matrix by comparing actual and predicted labels
         for true_label, pred_label in zip(np.argmax(y_true, axis=1), y_pred):
             cm[true_label, pred_label] += 1
 
+        self.accuracy = self.calculate_accuracy(y_pred, y_true)
+
+        # Create a plot to visualize the confusion matrix
         plt.figure(figsize=(10, 8))
-        plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-        plt.title('Confusion Matrix')
+        plt.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
+        plt.title(f"Confusion Matrix\n Accuracy: {self.accuracy:.2f}")
+
         plt.colorbar()
+
+        # Set the tick marks for the x and y axes
         tick_marks = np.arange(num_classes)
         plt.xticks(tick_marks, range(num_classes))
         plt.yticks(tick_marks, range(num_classes))
-        plt.xlabel('Predicted')
-        plt.ylabel('True')
 
+        # Label the axes with appropriate names
+        plt.xlabel("Predicted Labels")
+        plt.ylabel("True Labels")
+
+        # Annotate each cell of the matrix with the count of occurrences
         for i in range(num_classes):
             for j in range(num_classes):
-                plt.text(j, i, str(cm[i, j]), ha='center', va='center', color='black')
+                plt.text(j, i, str(cm[i, j]), ha="center", va="center", color="black")
 
-        plt.show()
+        plt.annotate(
+            #f"{self.get_details()}",
+            "details",
+            xy=(0.5, -0.15),
+            xycoords="axes fraction",
+            ha="left",
+            va="top",
+            fontsize=10,
+            color="gray",
+        )
+        # save
+        file_path = (
+            ""
+            # + "doc/out/confusion/" 
+            #+ self.get_details(mode="filename") 
+            + "+1"
+            + ".png"
+        )
+        plt.savefig(
+            file_path,
+            bbox_inches="tight",  # prevents the labels from being cut off
+        )
+        plt.show(block=False)
+        plt.pause(0.1)
+
+    def save_results_to_csv(self, results, file_path):
+        """
+        Saves the results dictionary to a CSV file.
+
+        Parameters:
+        results (dict): The results dictionary.
+        file_path (str): Path to the CSV file.
+        """
+        with open(file_path, "w", newline="") as file:
+            writer = csv.writer(file)
+            for key, value in results.items():
+                lr, epochs, hidden_size = key
+                accuracy = value
+                writer.writerow([lr, epochs, hidden_size, accuracy])
+
+    def test_combinations(
+        self,
+        X: np.ndarray,  # Input data
+        y: np.ndarray,  # Target labels
+        X_test: np.ndarray = None,  # Input data for testing
+        y_test: np.ndarray = None,  # Target labels for testing
+        learning_rates: list[float] = [0.01],  # List of learning rates to test
+        learning_rate_adaptation: float = 1.0,
+        loss_factor: float = 1.0,
+        epochs_list: list = [1],  # List of numbers of epochs to test
+        hidden_sizes: list = [784],  # List of hidden layer sizes to test
+        batch_rate=0.1,  # Batch size
+        weights_random_samples=10,  # Number of random samples of weights to test
+        show_training_progress=False,  # Whether to show the training progress
+        weights_save_path=None,  # Path to save the weights
+    ) -> dict:
+        """
+        Tests different combinations of learning rates, epochs, and hidden layer sizes.
+
+        Returns:
+        dict: Dictionary containing accuracies for each combination.
+        """
+        results = {}
+        epochs_list = sorted(epochs_list)
+
+        for lr in learning_rates:
+            print(f"LR: {lr}")
+            for hidden_size in hidden_sizes:
+                print(f"Hidden Size: {hidden_size}")
+                accuracy_mean_list = [0.0] * len(epochs_list)
+                for sample in range(weights_random_samples):
+                    print(f"Sample: {sample+1}/{weights_random_samples}")
+                    # Reinitialize the network with the new hidden layer size
+                    self.reset(hidden_size=hidden_size)
+                    epochs_done = 0
+                    for epochs in epochs_list:
+                        print(f"Epochs: {epochs}")
+                        # Train the network
+                        self.train(
+                            X,
+                            y,
+                            X_test,
+                            y_test,
+                            epochs=epochs - epochs_done,
+                            learning_rate=lr,
+                            batch_rate=batch_rate,
+                            show_training_progress=show_training_progress,
+                            weights_save_path=weights_save_path,
+                            keep_best_weights=False,
+                        )
+                        epochs_done += epochs
+                        # Test the network
+                        if X_test is not None and y_test is not None:
+                            predictions = self.predict(X_test)
+                            self.accuracy = self.calculate_accuracy(predictions, y_test)
+
+                        # Record the accuracy
+                        current_accuracy = self.accuracy
+                        print(f"current_accuracy : {current_accuracy}")
+                        # accuracy_mean += current_accuracy / weights_random_samples
+                        accuracy_mean_list[epochs_list.index(epochs)] += (
+                            current_accuracy / weights_random_samples
+                        )
+                for epochs in epochs_list:
+                    epoch_accuracy_mean = accuracy_mean_list[epochs_list.index(epochs)]
+                    results[(lr, epochs, hidden_size)] = epoch_accuracy_mean
+        save_file = (
+            ""
+            # + "doc/out/test_combinations_results/"
+            + date.today().strftime("%Y%m%d")
+            + time.strftime("%H%M%S")
+        )
+        try:
+            # # Save the array
+            self.save_results_to_csv(results, save_file)
+            print(f"Results saved to {save_file}")
+        except IOError:
+            print(f"Error saving file: {save_file}.")
+        return results
 
 if __name__ == "__main__":
-    X, y = load_mnist_data('train.csv')
-    
-    # Vérification des données chargées
-    if X is None or y is None:
-        raise ValueError("Les données n'ont pas été correctement chargées.")
-    
-    input_size = X.shape[1]
-    hidden_size = 64  # Par exemple, vous pouvez ajuster cette valeur
-    output_size = 10
-    e = 30  # Nombre d'époques d'entraînement
-    mu = 0.01  # Taux d'apprentissage
+    X, y = load_mnist_data("train.csv")
+    X_test, y_test = load_mnist_data("test.csv")
 
-    nn = NeuralNetwork(input_size, hidden_size, output_size)
-    nn.train(X, y, epochs=e, learning_rate=mu)
+    # # X.shape[0] = number of rows, X.shape[1] = number of columns
+    input_size = X.shape[1]  # 784 = 28 * 28
+    # hidden_size = 21952
+    hidden_size = 784
+    hidden_activation_function = "tanh"
+    # # hidden_activation_function = "ReLU"
+    # # hidden_activation_function = "LeakyReLU"
+    output_activation_function = "softmax"
+    OUTPUT_SIZE = 10
 
-    X_test, y_test = load_mnist_data('test.csv')
-    nn.confusion_matrix(X_test, y_test)
+    nn = NeuralNetwork(
+        input_size,
+        hidden_size,
+        OUTPUT_SIZE,
+        hidden_activation_function,
+        output_activation_function,
+        # weights_file_path="src/weights_.npz",
+    )
+    e = 100
+    mu = 0.03
+    # nn.train(
+    #     X,
+    #     y,
+    #     X_test,
+    #     y_test,
+    #     epochs=e,
+    #     learning_rate=mu,
+    #     batch_size=32,
+    #     weights_save_path="src/weights_",
+    # )
+
+    # nn.confusion_matrix(
+    #     X_test,
+    #     y_test,
+    # )
+    # nn.visualize_predictions(X_test, y_test, 10)
+
+    # learning_rates = [
+    #     # 0.0000000000000000000000000000000000000000000000000000000000000001,
+    #     # 0.000000000000000000000000000000001,
+    #     # 0.00000000000000001,
+    #     # 0.0000000001,
+    #     # 0.0000001,
+    #     # 0.0001,
+    #     # 0.001,
+    #     # 0.02,
+    #     # 0.025,
+    #     0.03,
+    #     # 0.1,
+    #     # 0.9,
+    # ]
+    learning_rates = [0.03]
+    epoch = [1]
+    # epochs_list = [
+    #     1,
+    #     # 2,
+    #     #5,
+
+    #     # 10,
+    #     # 20,
+    #     # 100,
+    #     #    1000
+    # ]
+    hidden_sizes = [784]
+
+    batch_rates = [0.0005]
+    
+    for batch_rate in batch_rates:
+            results = nn.test_combinations(
+                X,
+                y,
+                X_test,
+                y_test,
+                learning_rates=learning_rates,
+                epochs_list=epoch,
+                hidden_sizes=hidden_sizes,
+                batch_rate=batch_rate,
+                weights_random_samples=1,
+                show_training_progress=True
+            )
+    nn.confusion_matrix(
+                X_test,
+                y_test,
+            )
     nn.visualize_prediction(X_test, y_test, 10)
+
+    wait = input("PRESS ENTER TO CONTINUE.")
+        

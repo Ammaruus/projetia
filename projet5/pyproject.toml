@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "4-rl"
+name = "5-ml"
 version = "0.1.0"
 description = ""
 authors = ["Yannick Molinghen <yannick.molinghen@ulb.be>"]
